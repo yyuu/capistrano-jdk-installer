@@ -347,7 +347,7 @@ module Capistrano
           }
 
           task(:install_locally, :except => { :no_release => true}) {
-            command = (<<-EOS).gsub(/\s+/, ' ')
+            command = (<<-EOS).gsub(/\s+/, ' ').strip
               if ! test -d #{java_home_local}; then
                 #{extract_archive(java_deployer_archive_local, java_home_local)} &&
                 #{java_cmd_local} -version;
@@ -377,7 +377,7 @@ module Capistrano
           }
 
           task(:install, :roles => :app, :except => { :no_release => true }) {
-            command = (<<-EOS).gsub(/\s+/, ' ')
+            command = (<<-EOS).gsub(/\s+/, ' ').strip
               if ! test -d #{java_home}; then
                 #{extract_archive(java_deployee_archive, java_home)} &&
                 #{java_cmd} -version;
