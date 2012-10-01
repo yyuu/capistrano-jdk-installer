@@ -240,7 +240,7 @@ module Capistrano
               agent.user_agent = 'Mozilla/5.0 (Windows; U; MSIE 9.0; Windows NT 9.0; en-US)'
               agent.cookie_jar.add!(Mechanize::Cookie.new('gpw_e24', '.', :domain => 'oracle.com', :path => '/', :secure => false, :for_domain => true))
             }
-            agent.ssl_version = :TLSv1
+            agent.ssl_version = :TLSv1 # we have to declare TLS version explicitly to avoid problems on LP:965371
             agent
           }
           _cset(:java_installer_uri, "http://updates.jenkins-ci.org/updates/hudson.tools.JDKInstaller.json")
