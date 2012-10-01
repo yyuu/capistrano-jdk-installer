@@ -243,9 +243,12 @@ module Capistrano
             agent.ssl_version = :TLSv1 # we have to declare TLS version explicitly to avoid problems on LP:965371
             agent
           }
-          _cset(:java_installer_uri, "http://updates.jenkins-ci.org/updates/hudson.tools.JDKInstaller.json")
+          _cset(:java_installer_json_uri) {
+            # fetch :java_installer_uri first for backward compatibility
+            fetch(:java_installer_uri, "http://updates.jenkins-ci.org/updates/hudson.tools.JDKInstaller.json")
+          }
           _cset(:java_installer_json_cache) {
-            File.join(java_tools_path_local, File.basename(URI.parse(java_installer_uri).path))
+            File.join(java_tools_path_local, File.basename(URI.parse(java_installer_json_uri).path))
           }
           _cset(:java_installer_json_expires, 86400)
           _cset(:java_installer_json) {
@@ -258,7 +261,7 @@ module Capistrano
               execute = []
               execute << "mkdir -p #{File.dirname(java_installer_json_cache)}"
               execute << "rm -f #{java_installer_json_cache}"
-              execute << "wget --no-verbose -O #{java_installer_json_cache} #{java_installer_uri}"
+              execute << "wget --no-verbose -O #{java_installer_json_cache} #{java_installer_json_uri}"
               if dry_run
                 logger.debug(execute.join(' && '))
               else

@@ -36,14 +36,14 @@ To enable this recipe, add following in your `config/deploy.rb`.
 
 Following options are available to manage your JDK installation.
 
- * `:java_version_name` - preferred JDK version. this value must be defined in JSON response from `:java_installer_uri`.
+ * `:java_version_name` - preferred JDK version. this value must be defined in JSON response from `:java_installer_json_uri`.
  * `:java_oracle_username` - your credential to be used to download JDK archive from oracle.com.
  * `:java_oracle_password` - your credential to be used to download JDK archive from oracle.com.
  * `:java_license_title` - the license title of JDK which you will accept.
  * `:java_accept_license` - specify whether you accept the JDK license. `false` by default.
  * `:java_setup_locally` - specify whether you want to setup JDK on local machine. `false` by default.
  * `:java_setup_remotely` - specify whether you want to setup JDK on remote machines. `true` by default.
- * `:java_installer_uri` - `http://updates.jenkins-ci.org/updates/hudson.tools.JDKInstaller.json` by default.
+ * `:java_installer_json_uri` - `http://updates.jenkins-ci.org/updates/hudson.tools.JDKInstaller.json` by default.
  * `:java_installer_json_cache` - the cache file path of "hudson.tools.JDKINstaller.json".
  * `:java_installer_json_expires` - the cache TTL. cache `86400` seconds by default.
  * `:java_home` - the path to the `JAVA_HOME` on remote machines.
