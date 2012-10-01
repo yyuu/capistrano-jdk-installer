@@ -51,6 +51,10 @@ Following options are available to manage your JDK installation.
  * `:java_cmd` - the `java` command on remote machines.
  * `:java_cmd_local` - the `java` command on local machine.
  * `:java_checksum_cmd` - use specified command to compare JDK archives. use `md5sum` by default.
+ * `:java_version` - specify a string to identify JDK version. by default, it will be generated from `:java_version_name`.
+ * `:java_release` - specify a string to identify JDK release. by default, it will be generated from `:java_version_name`.
+ * `:java_deployer_file` - specify a string to identify JDK archive. by default, it will be generated from `:java_version_name`.
+ * `:java_deployee_file` - specify a string to identify JDK archive. by default, it will be generated from `:java_version_name`.
 
 ## Contributing
 

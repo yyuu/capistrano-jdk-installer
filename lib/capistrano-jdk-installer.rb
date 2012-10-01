@@ -72,7 +72,7 @@ module Capistrano
 
     def extract_archive(archive, destination)
       case archive
-      when /\.bin$/
+      when /\.(bin|sh)$/
         "( cd #{File.dirname(destination)} && yes | sh #{archive} )"
       when /\.dmg$/
         if java_update_number
@@ -110,8 +110,8 @@ module Capistrano
             File.join(File.expand_path('.'), 'tools', 'java')
           }
           _cset(:java_home) {
-            case java_deployee_platform
-            when /Mac OS X/i
+            case java_deployee_file
+            when /macosx/i
               if java_update_number
                 File.join("/Library", "Java", "JavaVirtualMachines",
                           "jdk%s_%02d.jdk" % [java_inner_version, java_update_number],
@@ -130,8 +130,8 @@ module Capistrano
             end
           }
           _cset(:java_home_local) {
-            case java_deployer_platform
-            when /Mac OS X/i
+            case java_deployer_file
+            when /macosx/i
               if java_update_number
                 File.join("/Library", "Java", "JavaVirtualMachines",
                           "jdk%s_%02d.jdk" % [java_inner_version, java_update_number],
@@ -160,42 +160,35 @@ module Capistrano
           }
           _cset(:java_version_info) {
             case java_version_name
-            when /^(1\.4\.(\d+))(?:_([0-9]+))?$/ then [ $1, '1.4', $2, $3 ]
-            when /^(1\.5\.(\d+))(?:_([0-9]+))?$/ then [ $1, '5', $2, $3 ]
-            when /^(\d+)(?:u(\d+))?$/            then [ "1.#{$1}.0", $1, nil, $2 ]
+            when /^(1\.4\.(\d+))(?:[_u]([0-9]+))?$/ then [ $1, '1.4', $2, $3 ]
+            when /^(1\.5\.(\d+))(?:[_u]([0-9]+))?$/ then [ $1, '5', $2, $3 ]
+            when /^(\d+)(?:u(\d+))?$/               then [ "1.#{$1}.0", $1, 0, $2 ]
             else
               abort("Could not parse JDK version name: #{java_version_name}")
             end
           }
           _cset(:java_inner_version) { java_version_info[0] } # e.g. "1.7.0"
-          _cset(:java_major_version) { java_version_info[1] } # e.g. "7"
-          _cset(:java_minor_version) { java_version_info[2] } # e.g. nil
-          _cset(:java_update_number) { java_version_info[3] } # e.g. "6"
+          _cset(:java_major_version) { java_version_info[1] } # e.g. 7
+          _cset(:java_minor_version) { java_version_info[2] } # e.g. 0
+          _cset(:java_update_number) { java_version_info[3] } # e.g. 6
           _cset(:java_version) {
             "JDK #{java_major_version}"
           }
           _cset(:java_release) {
             case java_major_version
-            when '1.4'
+            when '1.4', '5'
+              jdk = java_major_version == '1.4' ? 'j2sdk' : 'jdk'
               if java_update_number
-                "Java SE Development Kit #{java_inner_version.gsub('.', '_')}_#{java_update_number}"
+                '%s-%s_%02d-oth-JPR' % [jdk, java_inner_version, java_update_number]
               else
-                "Java SE Development Kit #{java_inner_version.gsub('.', '_')}"
-              end
-            when '5'
-              if java_update_number
-                "Java SE Development Kit #{java_major_version}.#{java_minor_version} Update #{java_update_number}"
-              else
-                "Java SE Development Kit #{java_major_version}.#{java_minor_version}"
-              end
-            when '6', '7'
-              if java_update_number
-                "Java SE Development Kit #{java_major_version}u#{java_update_number}"
-              else
-                "Java SE Development Kit #{java_major_version}"
+                '%s-%s-oth-JPR' % [jdk, java_inner_version]
               end
             else
-              abort("Unknown JDK version: #{java_major_version}")
+              if java_update_number
+                'jdk-%du%d-oth-JPR' % [java_major_version, java_update_number]
+              else
+                'jdk-%d-oth-JPR' % [java_major_version]
+              end
             end
           }
           def java_platform(ostype, arch)
@@ -203,35 +196,56 @@ module Capistrano
             when /^Darwin$/i
               case arch
               when /^i[3-7]86$/i, /^x86_64$/i
-                'Mac OS X x64'
+                "macosx-x64"
               else
-                "Mac OS X #{arch}"
+                "macosx-#{arch.downcase}"
               end
             when /^Linux$/i
               case arch
               when /^i[3-7]86$/i
-                'Linux x86'
+                "linux-i586"
               when /^x86_64$/i
-                'Linux x64'
+                case java_major_version
+                when '1.4', '5'
+                  "linux-amd64"
+                else
+                  "linux-x64"
+                end
               else
-                "Linux #{arch}"
+                "linux-#{arch.downcase}"
               end
             when /^Solaris$/i
               case arch
               when /^sparc$/i
-                "Solaris SPARC"
+                "solaris-sparc"
               when /^sparcv9$/i
-                "Solaris SPARC 64-bit"
+                "solaris-sparcv9"
               when /^i[3-7]86$/i
-                "Solaris x86"
+                "solaris-i586"
               when /^x86_64$/i
-                "Solaris x64"
+                "solaris-x64"
               else
-                "Solaris #{arch}"
+                "solaris-#{arch.downcase}"
               end
             end
           end
-
+          def java_file(ostype, arch)
+            case java_major_version
+            when '1.4', '5'
+              jdk = java_major_version == '1.4' ? 'j2sdk' : 'jdk'
+              if java_update_number
+                '%s-%s_%02d-%s' % [jdk, java_inner_version.gsub('.', '_'), java_update_number, java_platform(ostype, arch)]
+              else
+                '%s-%s-%s' % [jdk, java_inner_version.gsub('.', '_'), java_platform(ostype, arch)]
+              end
+            else
+              if java_update_number
+                'jdk-%du%d-%s' % [java_major_version, java_update_number, java_platform(ostype, arch)]
+              else
+                'jdk-%d-%s' % [java_major_version, java_platform(ostype, arch)]
+              end
+            end
+          end
           ## hudson.tools.JDKInstaller.json
           _cset(:java_mechanize_agent) {
             Mechanize.log = ::Logger.new(STDERR)
@@ -277,30 +291,44 @@ module Capistrano
             abort("Unknown JSON format version: #{version}") if version != 2
             regex = Regexp.new(Regexp.quote(java_version), Regexp::IGNORECASE)
             data = java_installer_json['data']
-            data.find { |datum| regex === datum['name'].strip }
+            logger.info("Requested JDK version is #{java_version.dump}.")
+            data.find { |datum|
+              logger.debug("Checking JDK version: #{datum['name'].strip}")
+              regex === datum['name'].strip
+            }
           }
           _cset(:java_release_data) {
+            abort("No such JDK version found: #{java_version}") unless java_version_data
             regex = Regexp.new(Regexp.quote(java_release), Regexp::IGNORECASE)
             releases = java_version_data['releases']
-            releases.find { |release| regex === release['name'].strip or regex === release['title'].strip }
+            logger.info("Requested JDK release is #{java_release.dump}.")
+            releases.find { |release|
+              logger.debug("Checking JDK release: #{release['title'].strip} (#{release['name'].strip})")
+              regex === release['name'].strip or regex === release['title'].strip
+            }
           }
           _cset(:java_release_license_title) {
+            abort("No such JDK release found: #{java_version}/#{java_release}") unless java_release_data
             java_release_data['lictitle']
           }
-          def java_platform_data(regex)
+          def java_file_data(name)
+            abort("No such JDK release found: #{java_version}/#{java_release}") unless java_release_data
+            regex = Regexp.new(Regexp.quote(name.to_s), Regexp::IGNORECASE)
+            logger.info("Requested JDK file is #{name.dump}.")
             files = java_release_data['files']
-            data = files.find { |data|
-              regex === data['title']
+            files.find { |data|
+              logger.debug("Checking JDK file: #{data['title'].strip} (#{data['name'].strip})")
+              regex === data['name'] or regex === data['title']
             }
-            abort("Not supported on specified JDK release: #{regex.inspect}") unless data
-            data
           end
  
           ## settings for local machine
-          _cset(:java_deployer_platform) { java_platform(`uname -s`.strip, `uname -m`.strip) }
+          _cset(:java_deployer_file) {
+            java_file(`uname -s`.strip, `uname -m`.strip)
+          }
           _cset(:java_deployer_archive_uri) {
-            regex = Regexp.new(Regexp.quote(java_deployer_platform), Regexp::IGNORECASE)
-            data = java_platform_data(regex)
+            data = java_file_data(java_deployer_file)
+            abort("No such JDK release found for specified platform: #{java_version}/#{java_release}/#{java_deployer_file}") unless data
             data['filepath']
           }
           _cset(:java_deployer_archive) {
@@ -311,10 +339,12 @@ module Capistrano
           }
 
           ## settings for remote machines
-          _cset(:java_deployee_platform) { java_platform(capture('uname -s').strip, capture('uname -m').strip) }
+          _cset(:java_deployee_file) {
+            java_file(capture('uname -s').strip, capture('uname -m').strip)
+          }
           _cset(:java_deployee_archive_uri) {
-            regex = Regexp.new(Regexp.quote(java_deployee_platform), Regexp::IGNORECASE)
-            data = java_platform_data(regex)
+            data = java_file_data(java_deployee_file)
+            abort("No such JDK release found for specified platform: #{java_version}/#{java_release}/#{java_deployee_file}") unless data
             data['filepath']
           }
           _cset(:java_deployee_archive) {
