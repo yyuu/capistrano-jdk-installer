@@ -45,7 +45,7 @@ module Capistrano
           logger.debug "transfering: #{[:up, from, to, targets, options.merge(:logger => logger).inspect ] * ', '}"
         else
           stat = File.stat(from)
-          chdcksum_cmd = fetch(:java_checksum_cmd, 'md5sum')
+          checksum_cmd = fetch(:java_checksum_cmd, 'md5sum')
           checksum = run_locally("( cd #{File.dirname(from)} && #{checksum_cmd} #{File.basename(from)} )").strip
           targets = targets.reject { |ssh|
             begin
@@ -313,7 +313,7 @@ module Capistrano
           ## settings for remote machines
           _cset(:java_deployee_platform) { java_platform(capture('uname -s').strip, capture('uname -m').strip) }
           _cset(:java_deployee_archive_uri) {
-            regex = Regexp.new(Regexp.quote(java_depoyee_platform), Regexp::IGNORECASE)
+            regex = Regexp.new(Regexp.quote(java_deployee_platform), Regexp::IGNORECASE)
             data = java_platform_data(regex)
             data['filepath']
           }
