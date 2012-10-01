@@ -350,7 +350,8 @@ module Capistrano
             command = (<<-EOS).gsub(/\s+/, ' ').strip
               if ! test -d #{java_home_local}; then
                 #{extract_archive(java_deployer_archive_local, java_home_local)} &&
-                #{java_cmd_local} -version;
+                ( #{java_cmd_local} -version || rm -rf #{java_home_local} ) &&
+                test -d #{java_home_local};
               fi;
             EOS
             if dry_run
@@ -380,7 +381,8 @@ module Capistrano
             command = (<<-EOS).gsub(/\s+/, ' ').strip
               if ! test -d #{java_home}; then
                 #{extract_archive(java_deployee_archive, java_home)} &&
-                #{java_cmd} -version;
+                ( #{java_cmd} -version || rm -rf #{java_home} ) &&
+                test -d #{java_home};
               fi;
             EOS
             run(command)
