@@ -39,6 +39,7 @@ module Capistrano
 
     def upload_archive(from, to, options={}, &block)
       mode = options.delete(:mode)
+      run("mkdir -p #{File.dirname(to)}")
       execute_on_servers(options) { |servers|
         targets = servers.map { |server| sessions[server] }
         if dry_run
