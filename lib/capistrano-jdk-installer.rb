@@ -363,14 +363,11 @@ module Capistrano
           ## tasks
           desc("Install java locally.")
           task(:setup_locally, :except => { :no_release => true }) {
-            if fetch(:java_setup_locally, false)
-              transaction {
-                download_locally
-                install_locally
-              }
-            end
+            transaction {
+              download_locally
+              install_locally
+            }
           }
-          after 'deploy:setup', 'java:setup'
 
           task(:download_locally, :except => { :no_release => true }) {
             download_archive(java_deployer_archive_uri, java_deployer_archive_local)
@@ -398,6 +395,7 @@ module Capistrano
                 download
                 upload_archive(java_deployee_archive_local, java_deployee_archive)
                 install
+                setup_locally if fetch(:java_setup_locally, false)
               }
             end
           }
