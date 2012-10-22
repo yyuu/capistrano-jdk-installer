@@ -265,7 +265,7 @@ module Capistrano
           _cset(:java_installer_json_cache) {
             File.join(java_tools_path_local, File.basename(URI.parse(java_installer_json_uri).path))
           }
-          _cset(:java_installer_json_expires, 86400)
+          _cset(:java_installer_json_expires, 259200) # 3 days
           _cset(:java_installer_json_keep_stale, true) # keep staled cache even if wget fails
           _cset(:java_installer_json) {
             # should not update cache directly from wget.
