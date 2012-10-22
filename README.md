@@ -46,6 +46,7 @@ Following options are available to manage your JDK installation.
  * `:java_installer_json_uri` - `http://updates.jenkins-ci.org/updates/hudson.tools.JDKInstaller.json` by default.
  * `:java_installer_json_cache` - the cache file path of "hudson.tools.JDKINstaller.json".
  * `:java_installer_json_expires` - the cache TTL. cache `259200` seconds by default.
+ * `:java_installer_json_keep_stale` - use stale cache when `:java_installer_json_uri` is down. `true` by default.
  * `:java_home` - the path to the `JAVA_HOME` on remote machines.
  * `:java_home_local` - the path to the `JAVA_HOME` on local machine.
  * `:java_cmd` - the `java` command on remote machines.
