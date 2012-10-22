@@ -266,26 +266,32 @@ module Capistrano
             File.join(java_tools_path_local, File.basename(URI.parse(java_installer_json_uri).path))
           }
           _cset(:java_installer_json_expires, 86400)
+          _cset(:java_installer_json_keep_stale, true) # keep staled cache even if wget fails
           _cset(:java_installer_json) {
-            if File.file?(java_installer_json_cache)
-              refresh = File.mtime(java_installer_json_cache) + java_installer_json_expires < Time.now
-            else
-              refresh = true
-            end
-            if refresh
-              execute = []
-              execute << "mkdir -p #{File.dirname(java_installer_json_cache)}"
-              execute << "rm -f #{java_installer_json_cache}"
-              execute << "wget --no-verbose -O #{java_installer_json_cache} #{java_installer_json_uri}"
-              if dry_run
-                logger.debug(execute.join(' && '))
-              else
-                run_locally(execute.join(' && '))
+            # should not update cache directly from wget.
+            # wget will save response to the file even if the request fails.
+            tempfile = "#{java_installer_json_cache}.#{$$}"
+            begin
+              if not File.file?(java_installer_json_cache) or File.mtime(java_installer_json_cache)+java_installer_json_expires < Time.now
+                execute = []
+                execute << "mkdir -p #{File.dirname(java_installer_json_cache)}"
+                success_cmd = "mv -f #{tempfile} #{java_installer_json_cache}"
+                failure_cmd = java_installer_json_keep_stale ? 'true' : 'false'
+                execute << "( wget --no-verbose -O #{tempfile} #{java_installer_json_uri} && #{success_cmd} || #{failure_cmd} )"
+
+                if dry_run
+                  logger.debug(execute.join(' && '))
+                else
+                  run_locally(execute.join(' && '))
+                end
               end
+              abort("No such file: #{java_installer_json_cache}") unless File.file?(java_installer_json_cache)
+              json = File.read(java_installer_json_cache)
+              json = json.sub(/\A[^{]*/, '').sub(/[^}]*\z/, '').strip # remove leading & trailing JS code from response
+              JSON.load(json)
+            ensure
+              run_locally("rm -f #{tempfile}") unless dry_run
             end
-            json = File.read(java_installer_json_cache)
-            json = json.sub(/\A[^{]*/, '').sub(/[^}]*\z/, '') # remove leading & trailing JS code from response
-            JSON.load(json)
           }
           _cset(:java_version_data) {
             version = java_installer_json['version']
