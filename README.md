@@ -30,7 +30,7 @@ To enable this recipe, add following in your `config/deploy.rb`.
     require 'capistrano-jdk-installer'
     set(:java_version_name, "7u6")
     set(:java_oracle_username, "foo@example.com") # your ID on oracle.com
-    set(:java_oracle_password, "setcret") # your password on oracle.com
+    set(:java_oracle_password, "secret") # your password on oracle.com
     set(:java_license_title, "Oracle Binary Code License Agreement for Java SE")
     set(:java_accept_license, true)
 
