@@ -235,7 +235,7 @@ module Capistrano
           _cset(:java_installer_json) {
             # should not update cache directly from wget.
             # wget will save response to the file even if the request fails.
-            tempfile = `mktemp`.chomp
+            tempfile = `mktemp /tmp/capistrano-jdk-installer.XXXXXXXXXX`.chomp
             begin
               if not File.file?(java_installer_json_cache) or File.mtime(java_installer_json_cache)+java_installer_json_expires < Time.now
                 execute = []
