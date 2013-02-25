@@ -1,10 +1,9 @@
 require "capistrano-jdk-installer/version"
-require 'capistrano/transfer'
-require 'json'
-require 'logger'
-require 'mechanize'
-require 'net/sftp'
-require 'uri'
+require "capistrano/configuration/actions/file_transfer_ext"
+require "json"
+require "logger"
+require "mechanize"
+require "uri"
 
 module Capistrano
   module JDKInstaller
@@ -34,40 +33,6 @@ module Capistrano
             end
           }
         end
-      end
-    end
-
-    def upload_archive(from, to, options={}, &block)
-      mode = options.delete(:mode)
-      run("mkdir -p #{File.dirname(to)}")
-      execute_on_servers(options) { |servers|
-        targets = servers.map { |server| sessions[server] }
-        if dry_run
-          logger.debug "transfering: #{[:up, from, to, targets, options.merge(:logger => logger).inspect ] * ', '}"
-        else
-          stat = File.stat(from)
-          checksum_cmd = fetch(:java_checksum_cmd, 'md5sum')
-          checksum = run_locally("( cd #{File.dirname(from)} && #{checksum_cmd} #{File.basename(from)} )").strip
-          targets = targets.reject { |ssh|
-            begin
-              sftp = Net::SFTP::Session.new(ssh).connect!
-              remote_stat = sftp.stat!(to)
-              if stat.size == remote_stat.size
-                remote_checksum = ssh.exec!("( cd #{File.dirname(to)} && #{checksum_cmd} #{File.basename(to)} )").strip
-                checksum == remote_checksum # skip upload if file size and checksum are same between local and remote
-              else
-                false
-              end
-            rescue Net::SFTP::StatusException
-              false # upload again if the remote file is absent
-            end
-          }
-          Capistrano::Transfer.process(:up, from, to, targets, options.merge(:logger => logger), &block)
-        end
-      }
-      if mode
-        mode = mode.is_a?(Numeric) ? mode.to_s(8) : mode.to_s
-        run("chmod #{mode} #{to}", options)
       end
     end
 
@@ -400,7 +365,7 @@ module Capistrano
             if fetch(:java_setup_remotely, true)
               transaction {
                 download
-                upload_archive(java_deployee_archive_local, java_deployee_archive)
+                transfer_if_modified(:up, java_deployee_archive_local, java_deployee_archive)
                 install
                 setup_locally if fetch(:java_setup_locally, false)
               }
