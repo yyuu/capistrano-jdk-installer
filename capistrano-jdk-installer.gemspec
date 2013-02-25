@@ -17,8 +17,8 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
 
-  gem.add_dependency('capistrano')
-  gem.add_dependency('json')
-  gem.add_dependency('net-sftp', '>= 2.0.0')
-  gem.add_dependency('mechanize', '>= 2.0.0')
+  gem.add_dependency("capistrano")
+  gem.add_dependency("capistrano-file-transfer-ext", "~> 0.0.1")
+  gem.add_dependency("json")
+  gem.add_dependency("mechanize", "~> 2.0.0")
 end
