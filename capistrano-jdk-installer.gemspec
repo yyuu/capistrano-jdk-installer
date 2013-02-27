@@ -18,7 +18,7 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
 
   gem.add_dependency("capistrano")
-  gem.add_dependency("capistrano-file-transfer-ext", "~> 0.0.1")
+  gem.add_dependency("capistrano-file-transfer-ext", "~> 0.0.3")
   gem.add_dependency("json")
   gem.add_dependency("mechanize", "~> 2.0.0")
 end
