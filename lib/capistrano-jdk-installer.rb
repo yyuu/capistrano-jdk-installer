@@ -235,7 +235,7 @@ module Capistrano
           _cset(:java_installer_json) {
             # should not update cache directly from wget.
             # wget will save response to the file even if the request fails.
-            tempfile = `mktemp /tmp/capistrano-jdk-installer.XXXXXXXXXX`.chomp
+            tempfile = run_locally("mktemp /tmp/jdk-installer.XXXXXXXXXX").strip
             begin
               if not File.file?(java_installer_json_cache) or File.mtime(java_installer_json_cache)+java_installer_json_expires < Time.now
                 execute = []
@@ -365,6 +365,7 @@ module Capistrano
             if fetch(:java_setup_remotely, true)
               transaction {
                 download
+                run("mkdir -p #{File.dirname(java_deployee_archive).dump}")
                 transfer_if_modified(:up, java_deployee_archive_local, java_deployee_archive)
                 install
                 setup_locally if fetch(:java_setup_locally, false)
