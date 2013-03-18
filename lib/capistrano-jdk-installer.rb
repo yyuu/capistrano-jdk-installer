@@ -362,17 +362,19 @@ module Capistrano
 
           desc("Install java.")
           task(:setup, :roles => :app, :except => { :no_release => true }) {
-            if fetch(:java_setup_remotely, true)
-              transaction {
-                download
-                run("mkdir -p #{File.dirname(java_deployee_archive).dump}")
-                transfer_if_modified(:up, java_deployee_archive_local, java_deployee_archive)
-                install
-                setup_locally if fetch(:java_setup_locally, false)
-              }
-            end
+            setup_remotely if fetch(:java_setup_remotely, true)
+            setup_locally if fetch(:java_setup_locally, false)
           }
-          after 'deploy:setup', 'java:setup'
+          after "deploy:setup", "java:setup"
+
+          task(:setup_remotely, :roles => :app, :except => { :no_release => true }) {
+            transaction {
+              download
+              run("mkdir -p #{File.dirname(java_deployee_archive).dump}")
+              transfer_if_modified(:up, java_deployee_archive_local, java_deployee_archive)
+              install
+            }
+          }
 
           task(:download, :roles => :app, :except => { :no_release => true }) {
             download_archive(java_deployee_archive_uri, java_deployee_archive_local)
@@ -398,4 +400,4 @@ if Capistrano::Configuration.instance
   Capistrano::Configuration.instance.extend(Capistrano::JDKInstaller)
 end
 
-# vim:set ft=ruby :
+# vim:set ft=ruby sw=2 ts=2 :
