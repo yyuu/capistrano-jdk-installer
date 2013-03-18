@@ -7,67 +7,67 @@ require "uri"
 
 module Capistrano
   module JDKInstaller
-    def download_archive(uri, archive)
-      if FileTest.exist?(archive)
-        logger.info("Found downloaded archive: #{archive}")
-      else
-        if java_release_license_title != java_license_title or !java_accept_license
-          abort("You must accept JDK license before downloading.")
-        end
-
-        logger.info("Download archive from #{uri}.")
-        unless dry_run
-          run_locally("mkdir -p #{File.dirname(archive)}")
-          page = java_mechanize_agent.get(uri)
-          1.upto(16) { # to avoid infinity loop...
-            if page.uri.host == "login.oracle.com" # login.oracle.com doesn't return proper Content-Type
-              page = Mechanize::Page.new(page.uri, page.response, page.body, page.code, java_mechanize_agent) if page.is_a?(Mechanize::File)
-              form = page.form_with
-              form["ssousername"] = java_oracle_username
-              form["password"] = java_oracle_password
-              page = java_mechanize_agent.submit(form)
-            else
-              page.save(archive)
-              logger.info("Wrote #{page.body.size} bytes to #{archive}.")
-              break
-            end
-          }
-        end
-      end
-    end
-
-    def extract_archive(archive, destination)
-      case archive
-      when /\.(bin|sh)$/
-        "( cd #{File.dirname(destination)} && yes | sh #{archive} )"
-      when /\.dmg$/
-        if java_update_number
-          pkg = File.join("/Volumes",
-                          "JDK %d Update %02d" % [java_major_version, java_update_number],
-                          "JDK %d Update %02d.pkg" % [java_major_version, java_update_number])
-        else
-          pkg = File.join("/Volumes",
-                          "JDK %d" % [java_major_version],
-                          "JDK %d" % [java_major_version])
-        end
-        execute = []
-        execute << "open #{archive.dump}"
-        execute << "( while ! test -f #{pkg.dump}; do sleep 1; done )"
-        execute << "open #{pkg.dump}"
-        execute << "( while ! test -d #{destination.dump}; do sleep 1; done )"
-        execute.join(' && ')
-      when /\.(tar\.(gz|bz2)|tgz|tbz2)$/
-        "tar xf #{archive} -C #{File.dirname(destination)}"
-      when /\.zip$/
-        "( cd #{File.dirname(destination)} && unzip #{archive} )"
-      else
-        abort("Unknown archive type: #{archive}")
-      end
-    end
-
     def self.extended(configuration)
       configuration.load {
         namespace(:java) {
+          def _download_archive(uri, archive)
+            if FileTest.exist?(archive)
+              logger.info("Found downloaded archive: #{archive}")
+            else
+              if java_release_license_title != java_license_title or !java_accept_license
+                abort("You must accept JDK license before downloading.")
+              end
+
+              logger.info("Download archive from #{uri}.")
+              unless dry_run
+                run_locally("mkdir -p #{File.dirname(archive)}")
+                page = java_mechanize_agent.get(uri)
+                1.upto(16) { # to avoid infinity loop...
+                  if page.uri.host == "login.oracle.com" # login.oracle.com doesn't return proper Content-Type
+                    page = Mechanize::Page.new(page.uri, page.response, page.body, page.code, java_mechanize_agent) if page.is_a?(Mechanize::File)
+                    form = page.form_with
+                    form["ssousername"] = java_oracle_username
+                    form["password"] = java_oracle_password
+                    page = java_mechanize_agent.submit(form)
+                  else
+                    page.save(archive)
+                    logger.info("Wrote #{page.body.size} bytes to #{archive}.")
+                    break
+                  end
+                }
+              end
+            end
+          end
+
+          def _extract_archive(archive, destination)
+            case archive
+            when /\.(bin|sh)$/
+              "( cd #{File.dirname(destination)} && yes | sh #{archive} )"
+            when /\.dmg$/
+              if java_update_number
+                pkg = File.join("/Volumes",
+                                "JDK %d Update %02d" % [java_major_version, java_update_number],
+                                "JDK %d Update %02d.pkg" % [java_major_version, java_update_number])
+              else
+                pkg = File.join("/Volumes",
+                                "JDK %d" % [java_major_version],
+                                "JDK %d" % [java_major_version])
+              end
+              execute = []
+              execute << "open #{archive.dump}"
+              execute << "( while ! test -f #{pkg.dump}; do sleep 1; done )"
+              execute << "open #{pkg.dump}"
+              execute << "( while ! test -d #{destination.dump}; do sleep 1; done )"
+              execute.join(' && ')
+            when /\.(tar\.(gz|bz2)|tgz|tbz2)$/
+              "tar xf #{archive} -C #{File.dirname(destination)}"
+            when /\.zip$/
+              "( cd #{File.dirname(destination)} && unzip #{archive} )"
+            else
+              abort("Unknown archive type: #{archive}")
+            end
+          end
+
           ## JDK installation path settings
           _cset(:java_tools_path) {
             File.join(shared_path, 'tools', 'java')
@@ -342,13 +342,13 @@ module Capistrano
           }
 
           task(:download_locally, :except => { :no_release => true }) {
-            download_archive(java_deployer_archive_uri, java_deployer_archive_local)
+            _download_archive(java_deployer_archive_uri, java_deployer_archive_local)
           }
 
           task(:install_locally, :except => { :no_release => true}) {
             command = (<<-EOS).gsub(/\s+/, ' ').strip
               if ! test -d #{java_home_local}; then
-                #{extract_archive(java_deployer_archive_local, java_home_local)} &&
+                #{_extract_archive(java_deployer_archive_local, java_home_local)} &&
                 ( #{java_cmd_local} -version || rm -rf #{java_home_local} ) &&
                 test -d #{java_home_local};
               fi;
@@ -377,13 +377,13 @@ module Capistrano
           }
 
           task(:download, :roles => :app, :except => { :no_release => true }) {
-            download_archive(java_deployee_archive_uri, java_deployee_archive_local)
+            _download_archive(java_deployee_archive_uri, java_deployee_archive_local)
           }
 
           task(:install, :roles => :app, :except => { :no_release => true }) {
             command = (<<-EOS).gsub(/\s+/, ' ').strip
               if ! test -d #{java_home}; then
-                #{extract_archive(java_deployee_archive, java_home)} &&
+                #{_extract_archive(java_deployee_archive, java_home)} &&
                 ( #{java_cmd} -version || rm -rf #{java_home} ) &&
                 test -d #{java_home};
               fi;
