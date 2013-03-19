@@ -43,6 +43,8 @@ module Capistrano
           _cset(:java_bin_local) { File.join(java_home_local, "bin", "java") }
           _cset(:java_cmd) { "env JAVA_HOME=#{java_home.dump} #{java_bin.dump}" }
           _cset(:java_cmd_local) { "env JAVA_HOME=#{java_home_local.dump} #{java_bin_local.dump}" }
+          _cset(:java_archive_file) { File.join(java_archive_path, java_installer_tool.basename) }
+          _cset(:java_archive_file_local) { File.join(java_archive_path_local, java_installer_tool_local.basename) }
 
           ## license settings
           _cset(:java_accept_license, false)
@@ -98,21 +100,19 @@ module Capistrano
 
           desc("Install java locally.")
           task(:setup_locally, :except => { :no_release => true }) {
-            filename = File.join(java_archive_path_local, java_installer_tool_local.basename)
-            _download(java_installer_tool_local, filename, :via => :run_locally)
+            _download(java_installer_tool_local, java_archive_file_local, :via => :run_locally)
             unless _installed?(java_home_local, :via => :run_locally)
-              _install(java_installer_tool_local, filename, java_home_local, :via => :run_locally)
+              _install(java_installer_tool_local, java_archive_file_local, java_home_local, :via => :run_locally)
               _installed?(java_home_local, :via => :run_locally)
             end
           }
 
           task(:setup_remotely, :except => { :no_release => true }) {
-            filename = File.join(java_archive_path_local, java_installer_tool.basename)
-            remote_filename = File.join(java_archive_path, java_installer_tool.basename)
+            filename = File.join(java_archive_path_local, File.basename(java_archive_file))
             _download(java_installer_tool, filename)
-            _upload(filename, remote_filename)
+            _upload(filename, java_archive_file)
             unless _installed?(java_home)
-              _install(java_installer_tool, remote_filename, java_home)
+              _install(java_installer_tool, java_archive_file, java_home)
               _installed?(java_home)
             end
           }

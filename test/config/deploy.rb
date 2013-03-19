@@ -79,6 +79,7 @@ end
 
 def uninstall_java!
   run("rm -rf #{java_home.dump}")
+  run("rm -f #{java_archive_file.dump}")
   run_locally("rm -rf #{java_home_local.dump}")
 end
 
