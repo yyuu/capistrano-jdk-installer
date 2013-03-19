@@ -11,8 +11,10 @@ set :password, "vagrant"
 set :ssh_options, {:user_known_hosts_file => "/dev/null"}
 
 ## java ##
+set(:java_version_name, "7u15")
 set(:java_oracle_username) { ENV["JAVA_ORACLE_USERNAME"] || abort("java_oracle_username was not set") }
 set(:java_oracle_password) { ENV["JAVA_ORACLE_PASSWORD"] || abort("java_oracle_password was not set") }
+set(:java_tools_path_local) { File.expand_path("tmp/java") }
 
 role :web, "192.168.33.10"
 role :app, "192.168.33.10"
@@ -22,8 +24,7 @@ $LOAD_PATH.push(File.expand_path("../../lib", File.dirname(__FILE__)))
 require "capistrano-jdk-installer"
 
 def _invoke_command(cmdline, options={})
-  via = options.delete(:via)
-  if via == :run_locally
+  if options[:via] == :run_locally
     run_locally(cmdline)
   else
     invoke_command(cmdline, options)
@@ -75,6 +76,7 @@ def reset_java!
   variables.each_key do |key|
     reset!(key) if /^java_/ =~ key
   end
+  find_and_execute_task("java:setup_default_environment")
 end
 
 def uninstall_java!
@@ -102,12 +104,11 @@ namespace(:test_default) {
 
   task(:setup) {
     reset_java!
-    set(:java_version_name, "7u15")
+#   set(:java_version_name, "7u15")
     set(:java_accept_license, true)
     set(:java_license_title, "Oracle Binary Code License Agreement for Java SE")
     set(:java_setup_remotely, true)
     set(:java_setup_locally, true)
-    set(:java_tools_path_local) { File.expand_path("tmp/java") }
     set(:java_installer_json_expires, 300)
     set(:java_installer_json_keep_stale, false)
     uninstall_java!
@@ -121,6 +122,14 @@ namespace(:test_default) {
   task(:test_run_java) {
     assert_file_exists(java_bin)
     assert_command("#{java_cmd} -version")
+  }
+
+  task(:test_run_java_via_sudo) {
+    assert_command("#{java_cmd} -version", :via => :sudo)
+  }
+
+  task(:test_run_java_without_path) {
+    assert_command("java -version")
   }
 
   task(:test_run_java_via_run_locally) {
@@ -145,7 +154,6 @@ namespace(:test_with_java5) {
     set(:java_license_title, "Oracle Binary Code License Agreement for Java SE")
     set(:java_setup_remotely, true)
     set(:java_setup_locally, true)
-    set(:java_tools_path_local) { File.expand_path("tmp/java") }
     set(:java_installer_json_expires, 300)
     set(:java_installer_json_keep_stale, false)
     uninstall_java!
@@ -159,6 +167,14 @@ namespace(:test_with_java5) {
   task(:test_run_java) {
     assert_file_exists(java_bin)
     assert_command("#{java_cmd} -version")
+  }
+
+  task(:test_run_java_via_sudo) {
+    assert_command("#{java_cmd} -version", :via => :sudo)
+  }
+
+  task(:test_run_java_without_path) {
+    assert_command("java -version")
   }
 
   task(:test_run_java_via_run_locally) {
@@ -183,7 +199,6 @@ namespace(:test_with_java6) {
     set(:java_license_title, "Oracle Binary Code License Agreement for Java SE")
     set(:java_setup_remotely, true)
     set(:java_setup_locally, true)
-    set(:java_tools_path_local) { File.expand_path("tmp/java") }
     set(:java_installer_json_expires, 300)
     set(:java_installer_json_keep_stale, false)
     uninstall_java!
@@ -197,6 +212,14 @@ namespace(:test_with_java6) {
   task(:test_run_java) {
     assert_file_exists(java_bin)
     assert_command("#{java_cmd} -version")
+  }
+
+  task(:test_run_java_via_sudo) {
+    assert_command("#{java_cmd} -version", :via => :sudo)
+  }
+
+  task(:test_run_java_without_path) {
+    assert_command("java -version")
   }
 
   task(:test_run_java_via_run_locally) {
@@ -216,12 +239,11 @@ namespace(:test_with_remote) {
 
   task(:setup) {
     reset_java!
-    set(:java_version_name, "7u15")
+#   set(:java_version_name, "7u15")
     set(:java_accept_license, true)
     set(:java_license_title, "Oracle Binary Code License Agreement for Java SE")
     set(:java_setup_remotely, true)
     set(:java_setup_locally, false)
-    set(:java_tools_path_local) { File.expand_path("tmp/java") }
     set(:java_installer_json_expires, 300)
     set(:java_installer_json_keep_stale, false)
     uninstall_java!
@@ -254,12 +276,11 @@ namespace(:test_with_local) {
 
   task(:setup) {
     reset_java!
-    set(:java_version_name, "7u15")
+#   set(:java_version_name, "7u15")
     set(:java_accept_license, true)
     set(:java_license_title, "Oracle Binary Code License Agreement for Java SE")
     set(:java_setup_remotely, false)
     set(:java_setup_locally, true)
-    set(:java_tools_path_local) { File.expand_path("tmp/java") }
     set(:java_installer_json_expires, 300)
     set(:java_installer_json_keep_stale, false)
     uninstall_java!

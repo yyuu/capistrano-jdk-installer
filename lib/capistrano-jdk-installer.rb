@@ -39,12 +39,80 @@ module Capistrano
           _cset(:java_archive_path_local) { java_tools_path_local }
           _cset(:java_home) { java_installer_tool.install_path(:path => java_tools_path) }
           _cset(:java_home_local) { java_installer_tool_local.install_path(:path => java_tools_path_local) }
-          _cset(:java_bin) { File.join(java_home, "bin", "java") }
-          _cset(:java_bin_local) { File.join(java_home_local, "bin", "java") }
-          _cset(:java_cmd) { "env JAVA_HOME=#{java_home.dump} #{java_bin.dump}" }
-          _cset(:java_cmd_local) { "env JAVA_HOME=#{java_home_local.dump} #{java_bin_local.dump}" }
+          _cset(:java_bin_path) { File.join(java_home, "bin") }
+          _cset(:java_bin_path_local) { File.join(java_home_local, "bin") }
+          _cset(:java_bin) { File.join(java_bin_path, "java") }
+          _cset(:java_bin_local) { File.join(java_bin_path_local, "java") }
           _cset(:java_archive_file) { File.join(java_archive_path, java_installer_tool.basename) }
           _cset(:java_archive_file_local) { File.join(java_archive_path_local, java_installer_tool_local.basename) }
+
+          ## JDK environment
+          _cset(:java_setup_remotely, true)
+          _cset(:java_setup_locally, false)
+          _cset(:java_environment) {
+            environment = java_extra_environment.dup
+            if java_setup_remotely
+              environment["JAVA_HOME"] = java_home
+              environment["PATH"] = [ java_bin_path, "$PATH" ].join(":")
+            end
+            environment
+          }
+          _cset(:java_environment_local) {
+            environment = java_extra_environment_local.dup
+            if java_setup_locally
+              environment["JAVA_HOME"] = java_home_local
+              environment["PATH"] = [ java_bin_path_local, "$PATH" ].join(":")
+            end
+            environment
+          }
+          _cset(:java_extra_environment, {})
+          _cset(:java_extra_environment_local) { java_extra_environment }
+          def _command(cmdline, options={})
+            environment = options.fetch(:env, {})
+            if environment.empty?
+              cmdline
+            else
+              env = (["env"] + environment.map { |k, v| "#{k}=#{v.dump}" }).join(" ")
+              "#{env} #{cmdline}"
+            end
+          end
+          def command(cmdline, options={})
+            _command(cmdline, :env => java_environment.merge(options.fetch(:env, {})))
+          end
+          def command_local(cmdline, options={})
+            _command(cmdline, :env => java_environment_local.merge(options.fetch(:env, {})))
+          end
+          _cset(:java_cmd) { command(java_bin) }
+          _cset(:java_cmd_local) { command_local(java_bin_local) }
+
+          if top.namespaces.key?(:multistage)
+            after "multistage:ensure", "java:setup_default_environment"
+          else
+            on :start do
+              if top.namespaces.key?(:multistage)
+                after "multistage:ensure", "java:setup_default_environment"
+              else
+                setup_default_environment
+              end
+            end
+          end
+
+          _cset(:java_environment_join_keys, %w(DYLD_LIBRARY_PATH LD_LIBRARY_PATH MANPATH PATH))
+          def _merge_environment(x, y)
+            x.merge(y) { |key, x_val, y_val|
+              if java_environment_join_keys.include?(key)
+                [ y_val, x_val ].join(":")
+              else
+                y_val
+              end
+            }
+          end
+
+          task(:setup_default_environment, :except => { :no_release => true }) {
+            if fetch(:java_setup_default_environment, true)
+              set(:default_environment, _merge_environment(default_environment, java_environment))
+            end
+          }
 
           ## license settings
           _cset(:java_accept_license, false)
@@ -93,8 +161,8 @@ module Capistrano
           ## tasks
           desc("Install java.")
           task(:setup, :roles => :app, :except => { :no_release => true }) {
-            setup_remotely if fetch(:java_setup_remotely, true)
-            setup_locally if fetch(:java_setup_locally, false)
+            setup_remotely if java_setup_remotely
+            setup_locally if java_setup_locally
           }
           after "deploy:setup", "java:setup"
 
