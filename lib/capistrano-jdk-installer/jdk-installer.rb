@@ -344,33 +344,42 @@ module Capistrano
       JDK_INSTALLER_URI = "http://updates.jenkins-ci.org/updates/hudson.tools.JDKInstaller.json"
       JDK_INSTALLER_TTL = 259200
       class << self
-        def platform_string(ostype, arch, options={})
+        def major_version(version_name)
+          case version_name
+          when /^1_4_\d+(?:_[0-9]+)?$/ then "1.4"
+          when /^1_5_\d+(?:_[0-9]+)?$/ then "5"
+          when /^(\d+)(?:u\d+)?$/      then $1
+          else
+            raise(JDKInstallerParseError.new("Could not parse JDK version name: #{version_name}"))
+          end
+        end
+
+        def platform_string(version_name, ostype, arch, options={})
+          major_version = major_version(version_name)
           ostype = ostype.to_s.strip.downcase
           arch = arch.to_s.strip.downcase
-          case ostype
-          when /^Darwin$/i
-            case arch
-            when /^(?:i[3-7]86|x86_64)$/ then "macosx-x64"
-            else
-              "macosx-#{arch}"
-            end
-          when /^Linux$/i
-            case arch
-            when /^i[3-7]86$/i         then "linux-i586"
-            when /^(?:amd64|x86_64)$/i then "linux-x64"
-            else
-              "linux-#{arch}"
-            end
-          when /^Solaris$/i
-            case arch
-            when /^sparc$/i    then "solaris-sparc"
-            when /^sparcv9$/i  then "solaris-sparcv9"
-            when /^i[3-7]86$/i then "solaris-i586"
-            when /^x86_64$/i   then "solaris-x64"
-            else
-              "solaris-#{arch}"
-            end
+          case major_version
+          when /^(?:1\.4|5)$/
+            arch = case arch
+                   when /^(?:i[3-7]86)$/i     then "i586"
+                   when /^(?:amd64|x86_64)$/i then "amd64"
+                   else
+                     arch
+                   end
+          else
+            ostype = case ostype
+                     when /^Darwin$/i then "macosx"
+                     else
+                       ostype
+                     end
+            arch = case arch
+                   when /^(?:i[3-7]86)$/i     then ostype == "macosx" ? "x64" : "i586"
+                   when /^(?:amd64|x86_64)$/i then "x64"
+                   else
+                     arch
+                   end
           end
+          "#{ostype}-#{arch}"
         end
       end
 

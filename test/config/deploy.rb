@@ -84,6 +84,7 @@ end
 
 task(:test_all) {
   find_and_execute_task("test_default")
+  find_and_execute_task("test_with_java5")
   find_and_execute_task("test_with_java6")
   find_and_execute_task("test_with_remote")
   find_and_execute_task("test_with_local")
@@ -101,6 +102,44 @@ namespace(:test_default) {
   task(:setup) {
     reset_java!
     set(:java_version_name, "7u15")
+    set(:java_accept_license, true)
+    set(:java_license_title, "Oracle Binary Code License Agreement for Java SE")
+    set(:java_setup_remotely, true)
+    set(:java_setup_locally, true)
+    set(:java_tools_path_local) { File.expand_path("tmp/java") }
+    set(:java_installer_json_expires, 300)
+    set(:java_installer_json_keep_stale, false)
+    uninstall_java!
+    find_and_execute_task("deploy:setup")
+  }
+
+  task(:teardown) {
+    uninstall_java!
+  }
+
+  task(:test_run_java) {
+    assert_file_exists(java_bin)
+    assert_command("#{java_cmd} -version")
+  }
+
+  task(:test_run_java_via_run_locally) {
+    assert_file_exists(java_bin_local, :via => :run_locally)
+    assert_command("#{java_cmd_local} -version", :via => :run_locally)
+  }
+}
+
+namespace(:test_with_java5) {
+  task(:default) {
+    methods.grep(/^test_/).each do |m|
+      send(m)
+    end
+  }
+  before "test_with_java5", "test_with_java5:setup"
+  after "test_with_java5", "test_with_java5:teardown"
+
+  task(:setup) {
+    reset_java!
+    set(:java_version_name, "1_5_0_22")
     set(:java_accept_license, true)
     set(:java_license_title, "Oracle Binary Code License Agreement for Java SE")
     set(:java_setup_remotely, true)

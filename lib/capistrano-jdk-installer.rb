@@ -23,8 +23,8 @@ module Capistrano
 
           ## JDK version settings
           _cset(:java_version_name) { abort("You must specify JDK version explicitly.") }
-          _cset(:java_platform) { JDKInstaller.platform_string(capture("uname -s"), capture("uname -m")) }
-          _cset(:java_platform_local) { JDKInstaller.platform_string(run_locally("uname -s"), run_locally("uname -m")) }
+          _cset(:java_platform) { JDKInstaller.platform_string(java_version_name, capture("uname -s"), capture("uname -m")) }
+          _cset(:java_platform_local) { JDKInstaller.platform_string(java_version_name, run_locally("uname -s"), run_locally("uname -m")) }
           _cset(:java_version_regex) {
             Regexp.new(Regexp.escape("#{java_version_name}-#{java_platform}"), Regexp::IGNORECASE)
           }
