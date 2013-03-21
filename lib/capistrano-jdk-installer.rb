@@ -49,24 +49,24 @@ module Capistrano
           ## JDK environment
           _cset(:java_setup_remotely, true)
           _cset(:java_setup_locally, false)
-          _cset(:java_environment) {
-            environment = java_extra_environment.dup
+          _cset(:java_default_environment) {
+            environment = {}
             if java_setup_remotely
               environment["JAVA_HOME"] = java_home
               environment["PATH"] = [ java_bin_path, "$PATH" ].join(":")
             end
             environment
           }
-          _cset(:java_environment_local) {
-            environment = java_extra_environment_local.dup
+          _cset(:java_default_environment_local) {
+            environment = {}
             if java_setup_locally
               environment["JAVA_HOME"] = java_home_local
               environment["PATH"] = [ java_bin_path_local, "$PATH" ].join(":")
             end
             environment
           }
-          _cset(:java_extra_environment, {})
-          _cset(:java_extra_environment_local) { java_extra_environment }
+          _cset(:java_environment) { java_default_environment.merge(fetch(:java_extra_environment, {})) }
+          _cset(:java_environment_local) { java_default_environment_local.merge(fetch(:java_extra_environment_local, {})) }
           def _command(cmdline, options={})
             environment = options.fetch(:env, {})
             if environment.empty?
@@ -177,7 +177,7 @@ module Capistrano
 
           task(:setup_remotely, :except => { :no_release => true }) {
             filename = File.join(java_archive_path_local, File.basename(java_archive_file))
-            _download(java_installer_tool, filename)
+            _download(java_installer_tool, filename, :via => :run_locally)
             _upload(filename, java_archive_file)
             unless _installed?(java_home)
               _install(java_installer_tool, java_archive_file, java_home)
