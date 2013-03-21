@@ -49,8 +49,9 @@ module Capistrano
           ## JDK environment
           _cset(:java_setup_remotely, true)
           _cset(:java_setup_locally, false)
+          _cset(:java_common_environment, {})
           _cset(:java_default_environment) {
-            environment = {}
+            environment = java_common_environment.dup
             if java_setup_remotely
               environment["JAVA_HOME"] = java_home
               environment["PATH"] = [ java_bin_path, "$PATH" ].join(":")
@@ -58,7 +59,7 @@ module Capistrano
             environment
           }
           _cset(:java_default_environment_local) {
-            environment = {}
+            environment = java_common_environment.dup
             if java_setup_locally
               environment["JAVA_HOME"] = java_home_local
               environment["PATH"] = [ java_bin_path_local, "$PATH" ].join(":")
