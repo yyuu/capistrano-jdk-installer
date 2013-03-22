@@ -85,7 +85,7 @@ module Capistrano
       def mechanize
         @mechanize ||= ::Mechanize.new { |agent|
           agent.user_agent = MECHANIZE_USER_AGENT
-          agent.cookie_jar.add!(Mechanize::Cookie.new("gpw_e24", ".", :domain => "oracle.com", :path => "/", :secure => false, :for_domain => true))
+          agent.cookie_jar.add!(::Mechanize::Cookie.new("gpw_e24", ".", :domain => "oracle.com", :path => "/", :secure => false, :for_domain => true))
           agent.ssl_version = :TLSv1 # we have to declare TLS version explicitly to avoid problems on LP:965371
         }
       end
@@ -418,7 +418,6 @@ module Capistrano
         end
       end
 
-
       def update!
         begin
           page = mechanize.get(@uri)
@@ -432,7 +431,6 @@ module Capistrano
           end
         end
       end
-
 
       def write(s)
         if @file.respond_to?(:write)

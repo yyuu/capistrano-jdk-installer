@@ -49,24 +49,25 @@ module Capistrano
           ## JDK environment
           _cset(:java_setup_remotely, true)
           _cset(:java_setup_locally, false)
-          _cset(:java_environment) {
-            environment = java_extra_environment.dup
+          _cset(:java_common_environment, {})
+          _cset(:java_default_environment) {
+            environment = {}
             if java_setup_remotely
               environment["JAVA_HOME"] = java_home
               environment["PATH"] = [ java_bin_path, "$PATH" ].join(":")
             end
-            environment
+            _merge_environment(java_common_environment, environment)
           }
-          _cset(:java_environment_local) {
-            environment = java_extra_environment_local.dup
+          _cset(:java_default_environment_local) {
+            environment = {}
             if java_setup_locally
               environment["JAVA_HOME"] = java_home_local
               environment["PATH"] = [ java_bin_path_local, "$PATH" ].join(":")
             end
-            environment
+            _merge_environment(java_common_environment, environment)
           }
-          _cset(:java_extra_environment, {})
-          _cset(:java_extra_environment_local) { java_extra_environment }
+          _cset(:java_environment) { _merge_environment(java_default_environment, fetch(:java_extra_environment, {})) }
+          _cset(:java_environment_local) { _merge_environment(java_default_environment_local, fetch(:java_extra_environment_local, {})) }
           def _command(cmdline, options={})
             environment = options.fetch(:env, {})
             if environment.empty?
@@ -101,7 +102,7 @@ module Capistrano
           def _merge_environment(x, y)
             x.merge(y) { |key, x_val, y_val|
               if java_environment_join_keys.include?(key)
-                [ y_val, x_val ].join(":")
+                ( y_val.split(":") + x_val.split(":") ).uniq.join(":")
               else
                 y_val
               end
@@ -177,7 +178,7 @@ module Capistrano
 
           task(:setup_remotely, :except => { :no_release => true }) {
             filename = File.join(java_archive_path_local, File.basename(java_archive_file))
-            _download(java_installer_tool, filename)
+            _download(java_installer_tool, filename, :via => :run_locally)
             _upload(filename, java_archive_file)
             unless _installed?(java_home)
               _install(java_installer_tool, java_archive_file, java_home)
