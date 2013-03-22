@@ -1,5 +1,5 @@
 module Capistrano
   module JDKInstaller
-    VERSION = "0.0.7git"
+    VERSION = "0.1.0"
   end
 end
