@@ -89,7 +89,7 @@ module Capistrano
           if top.namespaces.key?(:multistage)
             after "multistage:ensure", "java:setup_default_environment"
           else
-            on :start do
+            on :load do
               if top.namespaces.key?(:multistage)
                 after "multistage:ensure", "java:setup_default_environment"
               else
