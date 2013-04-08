@@ -21,7 +21,5 @@ Gem::Specification.new do |gem|
   gem.add_dependency("capistrano-file-transfer-ext", ">= 0.1.0")
   gem.add_dependency("json")
   gem.add_dependency("mechanize", "~> 2.5.0")
-  gem.add_development_dependency("net-scp", "~> 1.0.4")
-  gem.add_development_dependency("net-ssh", "~> 2.2.2")
   gem.add_development_dependency("vagrant", "~> 1.0.6")
 end
