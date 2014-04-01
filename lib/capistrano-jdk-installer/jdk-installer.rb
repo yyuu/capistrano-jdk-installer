@@ -85,7 +85,8 @@ module Capistrano
       def mechanize
         @mechanize ||= ::Mechanize.new { |agent|
           agent.user_agent = MECHANIZE_USER_AGENT
-          agent.cookie_jar.add!(::Mechanize::Cookie.new("gpw_e24", ".", :domain => "oracle.com", :path => "/", :secure => false, :for_domain => true))
+          agent.cookie_jar.add!(::Mechanize::Cookie.new("gpw_e24", ".", :domain => ".oracle.com", :path => "/", :secure => false, :for_domain => true))
+          agent.cookie_jar.add!(::Mechanize::Cookie.new("oraclelicense", "accept-securebackup-cookie", :domain => ".oracle.com", :path => "/", :secure => false, :for_domain => true))
           agent.ssl_version = :TLSv1 # we have to declare TLS version explicitly to avoid problems on LP:965371
         }
       end
