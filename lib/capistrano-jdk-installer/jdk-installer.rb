@@ -160,7 +160,7 @@ module Capistrano
           else
             pkg = File.join("/Volumes", "JDK %d" % [major_version], "JDK %d" % [major_version])
           end
-          execute << "open #{filenamedump}"
+          execute << "open #{filename.dump}"
           execute << "( while test \! -f #{pkg.dump}; do sleep 1; done )"
           execute << "open #{pkg.dump}"
           execute << "( while test \! -d #{destination.dump}; do sleep 1; done )"
