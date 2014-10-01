@@ -3,9 +3,9 @@ ALL := \
 	rubygems.yml.asc \
 	$(NULL)
 
+NAME := $(shell git config --get remote.origin.url | sed -e 's/^.*github\.com.//' -e 's/\.git$$//')
+
 .SUFFIXES: .yml.asc .yml
 
 all: $(ALL)
-
-.yml.yml.asc:
-	gpg --trust-model always --armor --encrypt --recipient 9AF0FA4C $<
+	rultor encrypt -p "$(NAME)" $<
