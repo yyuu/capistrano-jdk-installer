@@ -1,0 +1,13 @@
+decrypt:
+  rubygems.yml: rutlor/rubygems.yml.asc
+merge:
+  script: |
+    rm -f *.gem
+    gem build *.gemspec
+release:
+  script: |
+    rm -f *.gem
+    find ./lib -type f -and -name 'version.rb' -print0 | xargs -0 --no-run-if-empty sed -i "s/VERSION *= *\".*\"/VERSION = \"${tag}\"/"
+    gem build *.gemspec
+    chmod 0600 /home/r/rubygems.yml
+    gem push *.gem --config-file /home/r/rubygems.yml
