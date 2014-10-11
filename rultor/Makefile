@@ -1,11 +1,11 @@
 
-ALL := \
-	rubygems.yml.asc \
-	$(NULL)
+NAME := $(shell git config --get remote.origin.url | sed -e 's/^.*github\.com.//' -e 's/\.git$$//')
 
-.SUFFIXES: .yml.asc .yml
+all: clean
+	$(MAKE) build
 
-all: $(ALL)
+clean:
+	$(RM) *.asc
 
-.yml.yml.asc:
-	gpg --trust-model always --armor --encrypt --recipient 9AF0FA4C $<
+build: rubygems.yml
+	rultor encrypt -p "$(NAME)" $<
